@@ -11,7 +11,7 @@ int lightCols = 10;
 color[][] backBuffer = new color[lightRows][lightCols];
 color[][] frontBuffer = new color[lightRows][lightCols];
 
-float lightSize = 50;
+float lightSize = 80;
 
 Visualizer v1 = null;
 
@@ -44,13 +44,7 @@ void draw() {
 
 void stop()
 {
-  // the AudioInput you got from Minim.getLineIn()
   input.close();
   minim.stop();
- 
-  // this calls the stop method that 
-  // you are overriding by defining your own
-  // it must be called so that your application 
-  // can do all the cleanup it would normally do
   super.stop();
 }
