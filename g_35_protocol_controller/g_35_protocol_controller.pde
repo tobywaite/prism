@@ -1,26 +1,33 @@
-// GE Christmas light control for Arduino  
- // Ported by Scott Harris <scottrharris@gmail.com>  
- // scottrharris.blogspot.com  
+/* GE Christmas light control for Arduino
+
+   By Toby Waite <toby.waite@gmail.com>
+
+   Arduino-based serial interface for GE G-35 RGB LED christmas lights.
+
+   Accepts a serial command at 115200 bps to control a 10x10 grid of LEDs.
+   The command is 100 consecutive 4 byte sequences, each to control a single LED.
+   The 4 bytes in each sub-command correspond to the intensity and color of the LED as follows:
+   IRGB - Intensity value, red value, green value, blue value.
+ 
+   Based (heavily) on work by:
+     - Scott Harris <scottrharris@gmail.com>, scottrharris.blogspot.com
+       - Arduino port of christmas light control protocol.
+     - Robert Quattlebaum <darco@deepdarc.com> 
+       - Initial implementation of christmas light control protocol.
    
-   
- // Based on this code:  
-   
- /*!     Christmas Light Control  
- **     By Robert Quattlebaum <darco@deepdarc.com>  
- **     Released November 27th, 2010  
- **  
- **     For more information,  
- **     see <http://www.deepdarc.com/2010/11/27/hacking-christmas-lights/>.
- **  
- **     Originally intended for the ATTiny13, but should  
- **     be easily portable to other microcontrollers.  
- */  
+   ***********
+   PLEASE NOTE: 
+   The default serial buffer size has been increased from 128 bytes to 512 bytes.
+   This setting is on line 43 of the following file:
+   /Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino/HardwareSerial.cpp
+
+   If things don't seem to be working correctly, check this to ensure the configuration is correct.
+
+*/
    
  #define xmas_color_t uint16_t // typedefs can cause trouble in the Arduino environment  
-   
- // Eliminate the .h file  
-   
- #define XMAS_LIGHT_COUNT          (36) //I only have a 36 light strand. Should be 50 or 36  
+ 
+ #define XMAS_LIGHT_COUNT          (50)
  #define XMAS_CHANNEL_MAX          (0xF)  
  #define XMAS_DEFAULT_INTENSITY     (0xCC)  
  #define XMAS_HUE_MAX               ((XMAS_CHANNEL_MAX+1)*6-1)  
@@ -181,13 +188,6 @@ int blue;
 int grid_x_max = 10;
 int grid_y_max = 10;
   
-/* PLEASE NOTE: The default serial buffer size has been increased from 128 bytes to 512 bytes.
-This setting is on line 43 of the following file:
-/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino/HardwareSerial.cpp
-
-If things don't seem to be working correctly, check this to ensure the configuration is correct.
-*/
-  
 void loop(){  
   Serial.flush();
   while(!Serial.available()){
@@ -210,11 +210,11 @@ void loop(){
       for(int y=0; y<grid_y_max; y++){
         for(int cmd=0; cmd<4; cmd++){
           while(Serial.peek() == -1 && !timeout){
-//            if(millis() - start > 1000){
-//              Serial.print("elapsed time: ");
-//              Serial.println(millis() - start);
-//              //timeout = true; // timeout after 1000ms.
-//            }
+            if(millis() - start > 1000){
+              Serial.print("elapsed time: ");
+              Serial.println(millis() - start);
+              timeout = true; // timeout after 1000ms.
+            }
           }
           if(timeout)
             break;
@@ -229,29 +229,29 @@ void loop(){
       }
     }
     // serial success test code.
-/*  if(!timeout){
-      int elapsed = millis() - start;
-      Serial.print("success! Elapsed time: ");
-      Serial.println(elapsed);
-      
-      for(int x=0; x<grid_x_max; x++){
-        for(int y=0; y<grid_y_max; y++){
-          for(int cmd=0; cmd<4; cmd++){
-            Serial.print("[");
-            Serial.print((x));
-            Serial.print("][");
-            Serial.print((y));
-            Serial.print("][");
-            Serial.print(cmd);
-            Serial.print("]: ");
-            Serial.println(char(light_buffer[x][y][cmd]));
-          }
-        }
-      }
-    }*/
+//  if(!timeout){ 
+//      int elapsed = millis() - start;
+//      Serial.print("success! Elapsed time: ");
+//      Serial.println(elapsed);
+//      
+//      for(int x=0; x<grid_x_max; x++){
+//        for(int y=0; y<grid_y_max; y++){
+//          for(int cmd=0; cmd<4; cmd++){
+//            Serial.print("[");
+//            Serial.print((x));
+//            Serial.print("][");
+//            Serial.print((y));
+//            Serial.print("][");
+//            Serial.print(cmd);
+//            Serial.print("]: ");
+//            Serial.println((light_buffer[x][y][cmd]));
+//          }
+//        }
+//      }
+//    }
     if(!timeout){
-      // write buffer to leds
-      for(int x=0; x<grid_x_max; x++){
+      // write buffer to LEDs
+      for(int x=0; x<5; x++){
         for(int y=0; y<grid_y_max; y++){
           int bulb_position = light_position_map[x][y];
           int intensity = light_buffer[x][y][0];
@@ -260,9 +260,20 @@ void loop(){
           int blue = light_buffer[x][y][3];
           
           xmas_set_color(bulb_position, intensity, XMAS_COLOR(red, green, blue));
+//          Serial.print("Bulb number: ");
+//          Serial.print(bulb_position);
+//          Serial.print(": I ");
+//          Serial.print((light_buffer[x][y][0]));
+//          Serial.print(" R ");
+//          Serial.print((light_buffer[x][y][1]));
+//          Serial.print(" G ");
+//          Serial.print((light_buffer[x][y][2]));
+//          Serial.print(" B ");
+//          Serial.println((light_buffer[x][y][3]));
         }
       }
-      Serial.println("byte array set!");
+      Serial.print("byte array set! time: ");
+      Serial.println(millis() - start);
     }
   }
 }
