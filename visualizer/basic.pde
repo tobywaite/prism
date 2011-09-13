@@ -20,11 +20,11 @@ class BasicVisualizer implements Visualizer {
   void transform(color[][] previous, color[][] next) {
     updateMath();
     
-    colorMode(HSB, 100);
+    colorMode(HSB, 255);
     
     if (lastAverage > cutoff) {
       for (int i=0; i<numDots; i++) {
-        color randomColor = color(random(100), random(100), 100);
+        color randomColor = color(random(255), random(255), 255);
         previous[int(random(lightRows))][int(random(lightCols))] = randomColor;
       }
     }
