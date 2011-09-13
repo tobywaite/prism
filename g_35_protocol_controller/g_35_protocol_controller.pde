@@ -135,34 +135,60 @@
    
  void setup()  
  {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(XMASPIN, OUTPUT);  
   pinMode(STATUSPIN, OUTPUT);  
   digitalWrite(XMASPIN, LOW);
   
-  Serial.write("press any key to begin."); 
+  Serial.println("Ready to initialize. Send '%' to begin."); 
   
+  while(true){
   while(!Serial.available());
+  if(Serial.read() == byte('%'))
+    break;
+  }
   Serial.flush();
-  Serial.write("Initializing...");
+  Serial.println("Initializing...");
   
   xmas_fill_color(0,XMAS_LIGHT_COUNT,XMAS_DEFAULT_INTENSITY,XMAS_COLOR_BLACK); //Enumerate all the lights  
   xmas_fill_color(0,XMAS_LIGHT_COUNT,XMAS_DEFAULT_INTENSITY,XMAS_COLOR_WHITE); //Make them all blue  
-  Serial.write("Complete!");
-  
-  delay(5000);
-  xmas_fill_color(0,XMAS_LIGHT_COUNT,0x00,XMAS_COLOR_BLACK);
+  delay(100);
+  Serial.println("Complete!");
+  Serial.println();
  }  
+  
+int light_position_map[10][10] = { // [x][y]
+  { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+  {10,11,12,13,14,15,16,17,18,19},
+  {20,21,22,23,24,25,26,27,28,29},
+  {30,31,32,33,34,35,36,37,38,39},
+  {40,41,42,43,44,45,46,47,48,49},
+  {50,51,52,53,54,55,56,57,58,59},
+  {60,61,62,63,64,65,66,67,68,69},
+  {70,71,72,73,74,75,76,77,78,79},
+  {80,81,82,83,84,85,86,87,88,89},
+  {90,91,92,93,94,95,96,97,98,99}};
  
- int inByte;
- int location;
- int intensity;
- int red;
- int green;
- int blue; 
- 
- void loop()  
- {  
+int light_buffer[10][10][4];
+int command_buffer[4];
+int inByte;
+  
+int intensity;
+int red;
+int green;
+int blue;
+  
+int grid_x_max = 10;
+int grid_y_max = 10;
+  
+/* PLEASE NOTE: The default serial buffer size has been increased from 128 bytes to 512 bytes.
+This setting is on line 43 of the following file:
+/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino/HardwareSerial.cpp
+
+If things don't seem to be working correctly, check this to ensure the configuration is correct.
+*/
+  
+void loop(){  
   Serial.flush();
   while(!Serial.available()){
     digitalWrite(STATUSPIN, 0);
@@ -171,16 +197,72 @@
     delay(100);
   }
   
+  // start timer to keep track of timeout
+  int start = millis();
+  boolean timeout = false;
+  
   inByte = Serial.read();
-  
+
+  // ensure we are looking at a the beginning of a new frame.  
   if (inByte == byte('.')){
-    location = Serial.read();
-    intensity = Serial.read();
-    red = Serial.read();
-    green = Serial.read();
-    blue = Serial.read();
-  
-    xmas_set_color(location,intensity,XMAS_COLOR(red,green,blue));
-    Serial.println("set!");
+    
+    for(int x=0; x<grid_x_max; x++){
+      for(int y=0; y<grid_y_max; y++){
+        for(int cmd=0; cmd<4; cmd++){
+          while(Serial.peek() == -1 && !timeout){
+//            if(millis() - start > 1000){
+//              Serial.print("elapsed time: ");
+//              Serial.println(millis() - start);
+//              //timeout = true; // timeout after 1000ms.
+//            }
+          }
+          if(timeout)
+            break;
+          light_buffer[x][y][cmd] = Serial.read();  // intensity value
+        }
+        if(timeout)
+          break;
+      }
+      if(timeout){
+        Serial.println("timeout");
+        break;
+      }
+    }
+    // serial success test code.
+/*  if(!timeout){
+      int elapsed = millis() - start;
+      Serial.print("success! Elapsed time: ");
+      Serial.println(elapsed);
+      
+      for(int x=0; x<grid_x_max; x++){
+        for(int y=0; y<grid_y_max; y++){
+          for(int cmd=0; cmd<4; cmd++){
+            Serial.print("[");
+            Serial.print((x));
+            Serial.print("][");
+            Serial.print((y));
+            Serial.print("][");
+            Serial.print(cmd);
+            Serial.print("]: ");
+            Serial.println(char(light_buffer[x][y][cmd]));
+          }
+        }
+      }
+    }*/
+    if(!timeout){
+      // write buffer to leds
+      for(int x=0; x<grid_x_max; x++){
+        for(int y=0; y<grid_y_max; y++){
+          int bulb_position = light_position_map[x][y];
+          int intensity = light_buffer[x][y][0];
+          int red = light_buffer[x][y][1];
+          int green = light_buffer[x][y][2];
+          int blue = light_buffer[x][y][3];
+          
+          xmas_set_color(bulb_position, intensity, XMAS_COLOR(red, green, blue));
+        }
+      }
+      Serial.println("byte array set!");
+    }
   }
- }
+}
