@@ -42,8 +42,9 @@
  #define XMAS_COLOR_YELLOW     XMAS_COLOR(XMAS_CHANNEL_MAX,XMAS_CHANNEL_MAX,0)  
    
  // Pin setup  
- #define XMASPIN 4 // I drive the LED strand from pin #4  
- #define STATUSPIN 13 // The LED  
+#define TESTPIN 8 // I drive the LED strand from pin #4  
+#define XMASPIN 4 // I drive the LED strand from pin #4  
+#define STATUSPIN 13 // The LED  
    
  // The delays in the begin, one, and zero functions look funny, but they give the correct  
  // pulse durations when checked with a logic analyzer. Tested on an Arduino Uno.  
@@ -150,15 +151,15 @@
   Serial.println("Ready to initialize. Send '%' to begin."); 
   
   while(true){
-  while(!Serial.available());
-  if(Serial.read() == byte('%'))
-    break;
+    while(!Serial.available());
+      if(Serial.read() == byte('%'))
+        break;
   }
   Serial.flush();
   Serial.println("Initializing...");
   
   xmas_fill_color(0,XMAS_LIGHT_COUNT,XMAS_DEFAULT_INTENSITY,XMAS_COLOR_BLACK); //Enumerate all the lights  
-  xmas_fill_color(0,XMAS_LIGHT_COUNT,XMAS_DEFAULT_INTENSITY,XMAS_COLOR_WHITE); //Make them all blue  
+  xmas_fill_color(0,XMAS_LIGHT_COUNT,XMAS_DEFAULT_INTENSITY,XMAS_COLOR_WHITE); //Make them all white  
   delay(100);
   Serial.println("Complete!");
   Serial.println();
@@ -191,11 +192,14 @@ int grid_y_max = 10;
 void loop(){  
   Serial.flush();
   while(!Serial.available()){
+    digitalWrite(TESTPIN, 0);
     digitalWrite(STATUSPIN, 0);
     delay(100);
     digitalWrite(STATUSPIN, 1);  
     delay(100);
   }
+  
+  digitalWrite(TESTPIN, 1);
   
   // start timer to keep track of timeout
   int start = millis();
@@ -222,58 +226,19 @@ void loop(){
         }
         if(timeout)
           break;
+          
+        int bulb_position = light_position_map[x][y];
+        int intensity = light_buffer[x][y][0];
+        int red = light_buffer[x][y][1];
+        int green = light_buffer[x][y][2];
+        int blue = light_buffer[x][y][3];
+        xmas_set_color(bulb_position, intensity, XMAS_COLOR(red, green, blue));
       }
       if(timeout){
         Serial.println("timeout");
+        Serial.flush();
         break;
       }
-    }
-    // serial success test code.
-//  if(!timeout){ 
-//      int elapsed = millis() - start;
-//      Serial.print("success! Elapsed time: ");
-//      Serial.println(elapsed);
-//      
-//      for(int x=0; x<grid_x_max; x++){
-//        for(int y=0; y<grid_y_max; y++){
-//          for(int cmd=0; cmd<4; cmd++){
-//            Serial.print("[");
-//            Serial.print((x));
-//            Serial.print("][");
-//            Serial.print((y));
-//            Serial.print("][");
-//            Serial.print(cmd);
-//            Serial.print("]: ");
-//            Serial.println((light_buffer[x][y][cmd]));
-//          }
-//        }
-//      }
-//    }
-    if(!timeout){
-      // write buffer to LEDs
-      for(int x=0; x<5; x++){
-        for(int y=0; y<grid_y_max; y++){
-          int bulb_position = light_position_map[x][y];
-          int intensity = light_buffer[x][y][0];
-          int red = light_buffer[x][y][1];
-          int green = light_buffer[x][y][2];
-          int blue = light_buffer[x][y][3];
-          
-          xmas_set_color(bulb_position, intensity, XMAS_COLOR(red, green, blue));
-//          Serial.print("Bulb number: ");
-//          Serial.print(bulb_position);
-//          Serial.print(": I ");
-//          Serial.print((light_buffer[x][y][0]));
-//          Serial.print(" R ");
-//          Serial.print((light_buffer[x][y][1]));
-//          Serial.print(" G ");
-//          Serial.print((light_buffer[x][y][2]));
-//          Serial.print(" B ");
-//          Serial.println((light_buffer[x][y][3]));
-        }
-      }
-      Serial.print("byte array set! time: ");
-      Serial.println(millis() - start);
     }
   }
 }

@@ -33,8 +33,6 @@ class RGBController:
     def set_lights(self):
         self.serial.flush()
 
-        time.sleep(0.15)
-
         bytestring_command = []
         for col in self.grid:
             for cell in col:
@@ -43,15 +41,7 @@ class RGBController:
         self.serial.write('.') #indicates start of command
         self.serial.write(bytearray(bytestring_command))
         
-        waiting_for_response = True
-        start_time = time.clock()
-        while(waiting_for_response):
-            if self.serial.inWaiting() > 0:
-                waiting_for_response = False
-            if time.clock() - start_time > 2:
-                waiting_for_response = False
-                print "timeout :-("
-        print "time elapsed: %f" % (time.clock() - start_time)
+        time.sleep(.04)
 
     def set_whole_grid(self, led_color):
         for col in self.grid:
@@ -61,7 +51,7 @@ class RGBController:
 
     
 class LEDColor:
-    INTENSITY_MAX = 0xFF
+    INTENSITY_MAX = 0xCC
     COLOR_MAX = 0xF
 
     def __init__(self, i=INTENSITY_MAX, r=COLOR_MAX, g=COLOR_MAX, b=COLOR_MAX):
@@ -116,20 +106,45 @@ class LEDColor:
 if __name__ == '__main__':
 
     lights = RGBController()
-    color = LEDColor()
-    color.set_red()
+    color1 = LEDColor()
+    color2 = LEDColor()
+    color1.set_red()
+    color2.set_blue()
 
-    lights.set_whole_grid(color)
+    grid = [
+        [color1, color1, color1, color1, color1, color1, color1, color1, color1, color1],
+        [color1, color1, color1, color1, color1, color1, color1, color1, color1, color1],
+        [color1, color1, color1, color1, color1, color1, color1, color1, color1, color1],
+        [color1, color1, color1, color1, color1, color1, color1, color1, color1, color1],
+        [color1, color1, color1, color1, color1, color1, color1, color1, color1, color1]]
 
-    iterations = 1
+    lights.grid = grid
+    lights.set_lights()
 
-    for _ in range(iterations):
-        for _ in xrange(16):
-            print color
-            color.dim()
-            lights.set_whole_grid(color)
-        color.set_blue()
-        for _ in xrange(16):
-            print color
-            color.brighten()
-            lights.set_whole_grid(color)
+    iterations = 50
+
+    for x in xrange(2):
+        for y in xrange(10):
+            #print lights.grid[x][y]
+            time.sleep(.5)
+            lights.grid[x][y] = color2
+            lights.set_lights()
+            
+            #print lights.grid[x][y]
+
+
+    # for _ in range(iterations):
+    #     for _ in xrange(15):
+    #         print color1
+    #         color1.r = color1.r - 1
+    #         if color1.r < 0:
+    #             color1.r = 0
+    #         lights.set_lights()
+    #         time.sleep(.2)
+    #     for _ in xrange(15):
+    #         print color1
+    #         color1.r = color1.r + 1
+    #         if color1.r > 15:
+    #             color1.r = 15
+    #         lights.set_lights()
+    #         time.sleep(.2)
