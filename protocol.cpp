@@ -40,7 +40,7 @@
 // Note that the actual values used here were determined
 // by experimentation and by measurement using the logic
 // analyzer.
-#define send_one                         \ 
+#define send_one                         \
 {                                        \
   digitalWriteFast( DISPLAY_PIN, LOW );  \
   _delay_us( 19 );                       \
@@ -68,7 +68,7 @@
 
 // send_bits: transmits up to 8 bits to the LED sending from the MSB
 // first
-#define send_bits( _v, _b )            \ 
+#define send_bits( _v, _b )            \
 {                                      \
   int _c = _b;                         \
   while ( _c > 0 ) {                   \
@@ -111,15 +111,15 @@ void protocol_set_led_state( byte x,  // X-coordinate of LED
                              byte r, byte g, byte b, // Color 
                              byte i ) // Brightness
 {
-  
+
   // Ensure that brightness cannot go too high
-  
+
   if ( i > MAX_BRIGHTNESS ) {
     i = MAX_BRIGHTNESS;
   }
-  
+
   // The packet format is as follows:
-  // 
+  //
   // Name             Bits
   // ----             ----
   //
@@ -131,7 +131,7 @@ void protocol_set_led_state( byte x,  // X-coordinate of LED
   // Red                 4
   //
   // Note that values are sent MSB first
-  
+
   int id = y * 8 + x;
   start_packet
   send_bits( id, 6 )
@@ -147,15 +147,15 @@ void protocol_set_led_state_by_id( byte id,  // index of LED
                                    byte r, byte g, byte b, // Color 
                                    byte i ) // Brightness
 {
-  
+
   // Ensure that brightness cannot go too high
-  
+
   if ( i > MAX_BRIGHTNESS ) {
     i = MAX_BRIGHTNESS;
   }
-  
+
   // The packet format is as follows:
-  // 
+  //
   // Name             Bits
   // ----             ----
   //
@@ -167,7 +167,7 @@ void protocol_set_led_state_by_id( byte id,  // index of LED
   // Red                 4
   //
   // Note that values are sent MSB first
-  
+
   start_packet
   send_bits( id, 6 )
   send_bits( i, 8 )
@@ -180,31 +180,31 @@ void protocol_set_led_state_by_id( byte id,  // index of LED
 // init_led: send the ID to the next LED in the chain
 void init_led( byte x,     // X-coordinate of LED
                byte y ) {  // Y-coordinate of LED
-  
+
   // Initializing the LED is actually just achieved by sending it a packet setting
   // its ID.  This has to be done at power up and is called from protocol_init
-  
+
   protocol_set_led_state( x, y, 4, 5, 6, 100 );
-  
+
   // Observing the start up of the actual GE lights shows that it allows 0.005s
   // between initializations.  I don't know if this is necessary, but I am going
   // to follow the same
-  
+
   delay( 50 );
 }
 
 // init_led: send the ID to the next LED in the chain
 void init_led_by_id( byte n) {  // index of LED
-  
+
   // Initializing the LED is actually just achieved by sending it a packet setting
   // its ID.  This has to be done at power up and is called from protocol_init
-  
+
   protocol_set_led_state_by_id( n, 15, 15, 15, 100 );
-  
+
   // Observing the start up of the actual GE lights shows that it allows 0.005s
   // between initializations.  I don't know if this is necessary, but I am going
   // to follow the same
-  
+
   delay( 50 );
 }
 
@@ -242,29 +242,29 @@ void init_led_by_id( byte n) {  // index of LED
 // Also notice that the sum of the coorindates in each diagonal is related to the direction
 // of wiring: even diagonals are wired upwards, odd diagonals downward.
 //
-// Initially all the LEDs are set to RGB color (0,0,0) with no brightness (i.e. they are 
+// Initially all the LEDs are set to RGB color (0,0,0) with no brightness (i.e. they are
 // each sent an address and told to be off).
 
 /* Map of N to x,y.     y:
-x: 0  1  2  3  4  5  6  
+x: 0  1  2  3  4  5  6
 //42 43 44 45 46 47 48  6
 //41 40 39 38 37 36 35  5
 //28 29 30 31 32 33 34  4
 //27 26 25 24 23 22 21  3
 //14 15 16 17 18 19 20  2
 //13 12 11 10 09 08 07  1
-//00 01 02 03 04 05 06  0 
+//00 01 02 03 04 05 06  0
 */
 
 void protocol_init()
 {
   pinMode( DISPLAY_PIN, OUTPUT );
   digitalWrite( DISPLAY_PIN, LOW );
-  
+
   // This is done so we see that the bus is low before we do anything on it
-  
+
   delay( 1000 );
-  
+
   // Use our map to init the LEDs.
   for(byte n=0; n<50; n++)
     init_led_by_id(n);}
@@ -282,81 +282,80 @@ void protocol_broadcast( int r, int g, int b, // Color
 void protocol_test_card()
 {
   protocol_broadcast( 0, 0, 0, 0 );
-  
+
   // 1. Set all the LEDs to white and fade from 0 to maximum
 
   for ( int i = 0; i < MAX_BRIGHTNESS; i += 10 ) {
-      
+
     // Note that 13 is used here for all the RGB values as that is 
     // apparently what GE do for white (instead of 15)
 
-    protocol_broadcast( 13, 13, 13, i );        
+    protocol_broadcast( 13, 13, 13, i );
     delay( 50 );
-  }  
+  }
 
   protocol_broadcast( 0, 0, 0, 0 );
 
   for ( byte x = 0; x < 7; ++x ) {
     for ( byte y = 0; y < 7; ++y ) {
-        protocol_set_led_state( x, y, 15, 0, 0, MAX_BRIGHTNESS );
+        protocol_set_led_state( x, y, 13, 0, 0, MAX_BRIGHTNESS );
         delay( 50 );
     }
   }
 
   delay( 1000 );
   protocol_broadcast( 0, 0, 0, 0 );
-  
+
   // 2. Set alternating LEDs to red and blue and then reverse
-  
+
   for ( byte mode = 0; mode < 2; ++mode ) {
     for ( byte x = 0; x < 7; ++x ) {
       for ( byte y = 0; y < 7; ++y ) {
         if ( ( ( x + y ) & 1 ) == mode ) {
-          protocol_set_led_state( x, y, 15, 0, 0, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 13, 0, 0, MAX_BRIGHTNESS );
         }  else {
-          protocol_set_led_state( x, y, 0, 0, 15, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 0, 0, 13, MAX_BRIGHTNESS );
         }
       }
     }
-    
     delay( 1000 );
   }
 
   protocol_broadcast( 0, 0, 0, 0 );
-  
+
   // 3. Vertical stripes of green and yellow and then reverse
 
   for ( byte mode = 0; mode < 2; ++mode ) {
     for ( byte x = 0; x < 7; ++x ) {
       for ( byte y = 0; y < 7; ++y ) {
         if ( ( x % 2 ) == mode ) {
-          protocol_set_led_state( x, y, 0, 15, 0, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 0, 13, 0, MAX_BRIGHTNESS );
         }  else {
-          protocol_set_led_state( x, y, 15, 15, 0, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 13, 13, 0, MAX_BRIGHTNESS );
         }
       }
     }
-    
+
     delay( 1000 );
   }
-     
+
   protocol_broadcast( 0, 0, 0, 0 );
-  
+
   // 4. Horizontal stripes of orange and purple and then reverse
 
   for ( byte mode = 0; mode < 2; ++mode ) {
     for ( byte x = 0; x < 7; ++x ) {
       for ( byte y = 0; y < 7; ++y ) {
         if ( ( y % 2 ) == mode ) {
-          protocol_set_led_state( x, y, 0, 7, 15, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 0, 7, 13, MAX_BRIGHTNESS );
         }  else {
-          protocol_set_led_state( x, y, 15, 7, 0, MAX_BRIGHTNESS );
+          protocol_set_led_state( x, y, 13, 7, 0, MAX_BRIGHTNESS );
         }
       }
     }
-    
+
     delay( 1000 );
   }
-  
+
   protocol_broadcast( 0, 0, 0, 0 );
 }
