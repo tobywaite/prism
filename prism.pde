@@ -38,7 +38,7 @@ union serial_convertor
 };
 
 void sequential_sweep(int r, int g, int b, int i){
-  for(int n=0; n<50; n++){
+  for(int n=1; n<50; n++){
     protocol_set_led_state_by_id(n, r, g, b, i);
     delay(10);
   }
@@ -98,7 +98,7 @@ int hues[42][3] = {{7, 0, 0},
 void loop()
 {
   for(int i=0; i<42; i++){
-    sequential_sweep(hues[i][0], hues[i][1], hues[i][2], 255);
+    sequential_sweep(hues[i][0], hues[i][1], hues[i][2], 128);
   }
   /*
   // read in all serial data in 3 byte chunks and update the frame buffer accordingly.
