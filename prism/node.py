@@ -23,19 +23,19 @@ INDEX_TO_X_Y = (
 
 
 class Node(object):
-    def __init__(self, index, serial, color=None):
-        self._index = index
-        self.x, self.y = INDEX_TO_X_Y[index]
-        self._color = color
+    def __init__(self, serial, index, color=None, commands=None):
         self.serial = serial
-
-    # setting the color property sends the serial command to update the node.
-    def _set_color(self, color):
-        self._color = color
-        self.serial.send_command(self.index, color, debug=True)
+        self.index = index
+        self.x, self.y = INDEX_TO_X_Y[index]
+        self.color = color
 
     def _get_color(self):
         return self._color
+
+    def _set_color(self, color):
+        self._color = color
+        # send the serial command to set the color on the light grid.
+        self.serial.send_command(self.index, color, debug=True)
 
     color = property(_get_color, _set_color)
 
@@ -43,6 +43,7 @@ class Node(object):
         return self._index
 
     def _set_index(self, value):
+        # Cast all values to FixedWidth types when set.
         self._index = FixedWidth(value, width=8)
 
     index = property(_get_index, _set_index)
