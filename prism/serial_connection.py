@@ -2,13 +2,15 @@ from contextlib import contextmanager
 from serial import Serial
 from time import sleep
 
+from prism.fixed_width import FixedWidth
+
 
 class SerialConnection(object):
     def __init__(self, port='/dev/tty.usbserial-A6008cQz', baud_rate=115200):
         self.port = Serial(port, baud_rate)
         response = self.port.readline(5)
         if response != "ready":
-            raise SerialInitializationFailed
+            raise InitializationFailed
 
     @contextmanager
     def connection(self):
@@ -47,5 +49,5 @@ class SerialConnection(object):
             print "done reading"
 
 
-class SerialInitializationFailed(Exception):
+class InitializationFailed(Exception):
     pass
