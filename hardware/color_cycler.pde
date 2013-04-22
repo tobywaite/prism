@@ -5,6 +5,10 @@
 //
 // I hacked a set of GE Color Effects 50 lights to make a 7x7 color display and
 // this program controls the display to show different light patterns
+//
+// Specifically, there are two modes. A 'color cycle' mode that sweeps across
+// the color spectrum, and a 'set' mode that displays a single color.
+// These are controlled by an external switchbox, along with the brightness.
 
 #include "protocol.h"
 
